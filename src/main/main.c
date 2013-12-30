@@ -97,14 +97,17 @@ int  main(){ /// @todo TODO maybe move this to paged flash ?
 	unsigned long identifierArray[] = {418316034, 418316113, 217058897, 217059153, 218088960, 419356416, 419362048, 419361280, 418384384, 217056256};
 
 	unsigned char cant0ErrorID;
-	unsigned long data;
+	unsigned long RXdata;
+	unsigned long TXdata;
 	unsigned char dataLength;
 	unsigned long identifier;
 	unsigned char priorityByte;
 	unsigned char myN;
 	unsigned char myLoopVar;
+	TXdata = 0;
+	RXdata = TXdata;
 	cant0ErrorID = identifierArray[0];
-	dataLength = 8;
+	dataLength = 4;
 	identifier = 0;
 	priorityByte = 0;
 	myN = 0;
@@ -112,15 +115,16 @@ int  main(){ /// @todo TODO maybe move this to paged flash ?
 	cant0ErrorID = initCANT0();
 	CANT0RIER = 0x01;
 	CANT0RFLG &= 0xc3;//(NBIT6 & NBIT1);
-	cant0ErrorID = sendExtendedMessageOverCANT0(&data, dataLength, identifierArray[myN], priorityByte);
+	//cant0ErrorID = sendExtendedMessageOverCANT0(&data, dataLength, identifierArray[myN], priorityByte);
 	//cant0ErrorID = 10;
 
 	// Run forever repeating.
 	while(TRUE){
 		
 		myLoopVar++;
+ // Transmit block
 		if(cant0ErrorID == 0){		
-			cant0ErrorID = sendExtendedMessageOverCANT0(&data, dataLength, identifierArray[myN], priorityByte);
+			cant0ErrorID = sendExtendedMessageOverCANT0(&TXdata, dataLength, identifierArray[myN], priorityByte);
 			myN++;
 			if(myN == 10){
 				myN = 0;
@@ -128,18 +132,19 @@ int  main(){ /// @todo TODO maybe move this to paged flash ?
 		}else{
 			cant0ErrorID = handleCANT0Error(cant0ErrorID);
 		}
-
-/*
+		TXdata++;
+/* // Receive block
 		if(CANT0RFLG & BIT0 || CANT0CTL0 & BIT7){ //Message received in buffer
-			CANT0ErrorID = receiveCANX(Now needs lon id pointer, ptr);
-			priorityByte++;
+			cant0ErrorID = receiveCANT0(&identifier, &RXdata);
+			//PORTA = 0xFF;
+			//PORTA = 0x00;
+			//PORTA = priorityByte;
 			myN = 0;
-			PORTA = 0xFF;
-			PORTA = 0x00;
-			PORTA = priorityByte;
-			while(myN < 8){
+			while(myN < 4){
 				PORTA = 0x00;
-				PORTA = data[myN];
+				PORTA = 0xFF;
+				PORTA = 0x00;
+				PORTA = (unsigned char)(RXdata >> ((3 - myN) * 8));
 				myN++;
 			}
 		}

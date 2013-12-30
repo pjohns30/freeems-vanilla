@@ -57,16 +57,9 @@
 #define NO_SYNC 6
 
 unsigned char initCANT0(){
-	unsigned long n;
-	if((CANT0CTL1 & BIT0) == 0){ // If called from handleCAN0Error, hopefully we can skip this.
-		CANT0CTL0 |= BIT0;  // Request MSCAN initialization, required to write to regs: CANx CTL1, BTR0, BTR1, IDAC, IDAR0->7, IDMR0->7
-		n = 0;
-		while((!(CANT0CTL1 & BIT0)) && (n < MAX_CODE_TIME)){  // Wait for module to enter initialization mode
-			n++;
-		}
-		if((CANT0CTL1 & BIT0) == 0){
-			return MODULE_ISNT_READY_TO_BE_PROGRAMMED;
-		}
+	if((CANT0CTL1 & BIT0) == 0){
+		CANT0CTL0 |= BIT0;
+		return handleCANT0Error(MODULE_ISNT_READY_TO_BE_PROGRAMMED);
 	}
 	
 	CANT0CTL1 |= BIT7;	// Enable module
@@ -110,14 +103,7 @@ unsigned char initCANT0(){
 
 	CANT0CTL0 &= NBIT0; // Exit initialization mode. Should be &= NBIT0; but I'm trying to find a problem, and this is what Freescale does
 
-	n = 0;
-	while((CANT0CTL1 & BIT0) && (n <= MAX_CODE_TIME)){  // Wait for module
-		n++;
-	}
-	if(CANT0CTL1 & BIT0){
-		return MODULE_ISNT_READY_TO_WORK;
-	}
-	return handleCANT0Error(NO_SYNC);
+	return handleCANT0Error(MODULE_ISNT_READY_TO_WORK);
 }
 
 unsigned char sendExtendedMessageOverCANT0(unsigned long *data, unsigned char dataLength, unsigned long identifier, unsigned char priorityByte){
@@ -157,7 +143,7 @@ unsigned char sendExtendedMessageOverCANT0(unsigned long *data, unsigned char da
 	
 }
 
-unsigned char receiveCANT0(unsigned long *identifier, unsigned char *data){
+unsigned char receiveCANT0(unsigned long *identifier, unsigned long *data){
 	unsigned char dataLength;
 	unsigned char n;	
 	dataLength = CANT0RXDATALENGTH & 0x0F;
@@ -166,7 +152,7 @@ unsigned char receiveCANT0(unsigned long *identifier, unsigned char *data){
 		if(n == 0){
 			*identifier = ((((unsigned long) CANT0RXIDREG3) << 24) + (((unsigned long) CANT0RXIDREG2) << 16) + (((unsigned long) CANT0RXIDREG1) << 8) + CANT0RXIDREG0);
 		}
-		if(n < 8){
+		if(n < 4){ //Needs 8
 			data[n] = *(&CANT0RXDATASEG0 + n);
 		}
 		n++;
