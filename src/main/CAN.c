@@ -166,7 +166,7 @@ unsigned char handleCANT0Error(unsigned char errorID){
 	if(errorID == 0){
 		//Handling all cases. This would also be handled properly by the last else
 		return DONE;
-	}else if(errorID == 1){
+	}else if((errorID == 1) && (!(CANT0CTL1 & BIT0))){
 		n = 0;
 		while(((CANT0CTL1 & BIT0) == 0) && (n <= MAX_CODE_TIME)){  // Wait for module to enter initialization mode
 			n++;
@@ -175,7 +175,7 @@ unsigned char handleCANT0Error(unsigned char errorID){
 			return MODULE_ISNT_READY_TO_BE_PROGRAMMED;
 		}
 		return initCANT0();
-	}else if(errorID == 2){
+	}else if((errorID == 2) && (CANT0CTL1 & BIT0)){
 		n = 0;
 		while((CANT0CTL1 & BIT0) && (n <= MAX_CODE_TIME)){  // Wait for module
 			n++;
@@ -184,18 +184,13 @@ unsigned char handleCANT0Error(unsigned char errorID){
 			return MODULE_ISNT_READY_TO_WORK;
 		}
 		return handleCANT0Error(NO_SYNC);
-	}else if(errorID == 3){
-		if(!(CANT0TFLG & (BIT0|BIT1|BIT2))){
-			return NO_MT_TX_BUFFERS;
-		}
-		return DONE;
+	}else if((errorID == 3) && (!(CANT0TFLG & (BIT0|BIT1|BIT2)))){
+		return NO_MT_TX_BUFFERS;
 	}else if(errorID == 4){
 		// TODO pass this up to a logged variable so that it can be seen that the RX needs read more often. zsp10 or similar
-		return DONE;
 	}else if(errorID == 5){
 		// There's nothing to do about this except clear it. Maybe throw an error for the user to see?
-		return DONE;
-	}else if(errorID == 6){
+	}else if((errorID == 6) && (!(CANT0CTL0 & BIT4))){
 		n = 0;
 		while(((CANT0CTL0 & BIT4) == 0) && (n <= MAX_CODE_TIME)){
 			n++;
@@ -203,11 +198,11 @@ unsigned char handleCANT0Error(unsigned char errorID){
 		if(!(CANT0CTL0 & BIT4)){
 			return NO_SYNC;
 		}
-		return DONE;
 	}else{
 		// TODO pass this up to a logged variable so that it can be seen. zsp10 or similar
 		return errorID; // Undefined error, probably added an error code without much thought put into properly handling it
 	}
+	return DONE;
 }
 
 /*
