@@ -54,7 +54,7 @@
  * accessory code is added a new scheduling algorithm will be required to keep
  * the latency low without starving any particular blocks of CPU time.
  */
-int  main(){ /// @todo TODO maybe move this to paged flash ?
+unsigned char main(void){ /// @todo TODO maybe move this to paged flash ?
 	// Set everything up.
 	init();
 
